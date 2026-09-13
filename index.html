@@ -1,0 +1,564 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>バルセロナ貯金 Calculator</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Teko:wght@600;700&family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
+    
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background-color: #0c192c;
+      color: #f8fafc;
+    }
+    .font-teko {
+      font-family: 'Teko', sans-serif;
+    }
+    .barca-blue {
+      background-color: #004D98;
+    }
+    .barca-red {
+      background-color: #A50044;
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0a192f;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e3a8a;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-12">
+
+  <!-- Header -->
+  <header class="barca-blue text-white py-4 px-4 shadow-lg border-b-4 border-[#EDBB00] sticky top-0 z-50">
+    <div class="max-w-2xl mx-auto flex justify-between items-center">
+      <div class="flex items-center space-x-3">
+        <i class="fa-solid fa-shield-halved text-3xl text-[#EDBB00]"></i>
+        <div>
+          <h1 class="text-2xl font-black tracking-wider uppercase leading-none font-teko">バルセロナ貯金</h1>
+          <p class="text-xs text-blue-200 font-medium">Culer 観戦記録帳</p>
+        </div>
+      </div>
+      <div class="text-right">
+        <span class="text-xs text-blue-200 block">通算貯金額</span>
+        <span id="total-accumulated-savings" class="text-2xl font-bold font-teko text-[#EDBB00]">¥0</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-2xl mx-auto px-4 mt-6 space-y-6">
+
+    <!-- Mode Selector Tabs -->
+    <div class="flex rounded-lg bg-slate-800 p-1 border border-slate-700">
+      <button id="tab-calculator" onclick="switchTab('calc')" class="flex-1 py-2 text-center font-bold text-sm rounded-md barca-red text-white transition-all shadow">
+        <i class="fa-solid fa-calculator mr-1"></i> 試合計算
+      </button>
+      <button id="tab-trophy" onclick="switchTab('trophy')" class="flex-1 py-2 text-center font-bold text-sm rounded-md text-slate-400 hover:text-white transition-all">
+        <i class="fa-solid fa-trophy mr-1"></i> タイトル達成
+      </button>
+      <button id="tab-history" onclick="switchTab('history')" class="flex-1 py-2 text-center font-bold text-sm rounded-md text-slate-400 hover:text-white transition-all">
+        <i class="fa-solid fa-history mr-1"></i> 履歴 (<span id="history-count">0</span>)
+      </button>
+    </div>
+
+    <!-- CALCULATOR FORM -->
+    <div id="section-calculator" class="space-y-6">
+
+      <!-- Opponent & Basic Info -->
+      <div class="bg-slate-800/80 rounded-xl p-4 border border-slate-700 space-y-4">
+        <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center">
+          <i class="fa-regular fa-futbol mr-2 text-red-500"></i> 試合基本情報
+        </h2>
+        
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">対戦相手</label>
+            <input type="text" id="opponent" placeholder="例: レアル・マドリード" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500">
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">現在の連勝数（勝つ場合）</label>
+            <div class="flex items-center">
+              <input type="number" id="win-streak" value="1" min="0" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500" oninput="calculateSavings()">
+              <span class="text-xs text-slate-400 ml-2 whitespace-nowrap">連勝</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-3 bg-slate-900 p-3 rounded-lg border border-slate-700/50">
+          <span class="text-xs font-bold text-slate-300">大一番ボーナス:</span>
+          <label class="inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="is-el-clasico" class="sr-only peer" onchange="calculateSavings()">
+            <div class="relative w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
+            <span class="ms-2 text-xs text-amber-400 font-bold">クラシコ勝利 (+3,000円)</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Score & Match Outcomes -->
+      <div class="bg-slate-800/80 rounded-xl p-4 border border-slate-700 space-y-4">
+        <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center">
+          <i class="fa-solid fa-trophy mr-2 text-yellow-500"></i> 試合結果
+        </h2>
+
+        <!-- Match Result Radio -->
+        <div class="grid grid-cols-3 gap-2">
+          <label class="cursor-pointer">
+            <input type="radio" name="match-result" value="win" checked class="peer sr-only" onchange="calculateSavings()">
+            <div class="text-center py-2.5 rounded-lg border border-slate-700 bg-slate-900 peer-checked:bg-emerald-600 peer-checked:border-emerald-500 peer-checked:text-white text-slate-400 font-bold text-sm transition-all">
+              勝利 (+1,000円)
+            </div>
+          </label>
+          <label class="cursor-pointer">
+            <input type="radio" name="match-result" value="draw" class="peer sr-only" onchange="calculateSavings()">
+            <div class="text-center py-2.5 rounded-lg border border-slate-700 bg-slate-900 peer-checked:bg-amber-600 peer-checked:border-amber-500 peer-checked:text-white text-slate-400 font-bold text-sm transition-all">
+              引き分け
+            </div>
+          </label>
+          <label class="cursor-pointer">
+            <input type="radio" name="match-result" value="loss" class="peer sr-only" onchange="calculateSavings()">
+            <div class="text-center py-2.5 rounded-lg border border-slate-700 bg-slate-900 peer-checked:bg-rose-900 peer-checked:border-rose-700 peer-checked:text-white text-slate-400 font-bold text-sm transition-all">
+              敗戦
+            </div>
+          </label>
+        </div>
+
+        <!-- Checkbox Options for Result Modifiers -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm pt-2">
+          <label class="flex items-center space-x-2 bg-slate-900/60 p-2.5 rounded-lg border border-slate-700/50 cursor-pointer hover:bg-slate-900">
+            <input type="checkbox" id="clean-sheet" class="w-4 h-4 text-red-600 rounded bg-slate-800 border-slate-600 focus:ring-0" onchange="calculateSavings()">
+            <span>クリーンシート（無失点）</span>
+            <span class="ml-auto text-xs font-semibold text-emerald-400">+¥500</span>
+          </label>
+
+          <label class="flex items-center space-x-2 bg-slate-900/60 p-2.5 rounded-lg border border-slate-700/50 cursor-pointer hover:bg-slate-900">
+            <input type="checkbox" id="comeback-win" class="w-4 h-4 text-red-600 rounded bg-slate-800 border-slate-600 focus:ring-0" onchange="calculateSavings()">
+            <span>逆転勝利</span>
+            <span class="ml-auto text-xs font-semibold text-emerald-400">+¥1,000</span>
+          </label>
+
+          <label class="flex items-center space-x-2 bg-slate-900/60 p-2.5 rounded-lg border border-slate-700/50 cursor-pointer hover:bg-slate-900">
+            <input type="checkbox" id="margin-win" class="w-4 h-4 text-red-600 rounded bg-slate-800 border-slate-600 focus:ring-0" onchange="calculateSavings()">
+            <span>3点差以上の勝利</span>
+            <span class="ml-auto text-xs font-semibold text-emerald-400">+¥1,000</span>
+          </label>
+
+          <label class="flex items-center space-x-2 bg-slate-900/60 p-2.5 rounded-lg border border-slate-700/50 cursor-pointer hover:bg-slate-900">
+            <input type="checkbox" id="at-dramatic-win-draw" class="w-4 h-4 text-red-600 rounded bg-slate-800 border-slate-600 focus:ring-0" onchange="calculateSavings()">
+            <span>ATの劇的勝利 or 引き分け</span>
+            <span class="ml-auto text-xs font-semibold text-emerald-400">+¥1,000</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Goals & Specific Player Events -->
+      <div class="bg-slate-800/80 rounded-xl p-4 border border-slate-700 space-y-4">
+        <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center">
+          <i class="fa-solid fa-futbol mr-2 text-emerald-400"></i> 得点・個人成績
+        </h2>
+
+        <!-- Goal Counter -->
+        <div class="flex items-center justify-between bg-slate-900 p-3 rounded-lg border border-slate-700">
+          <div>
+            <div class="font-bold text-sm text-white">チーム総得点</div>
+            <div class="text-xs text-slate-400">1ゴールにつき 500円</div>
+          </div>
+          <div class="flex items-center space-x-3">
+            <button onclick="adjustCounter('goals', -1)" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-white font-bold text-lg border border-slate-600 flex items-center justify-center">-</button>
+            <span id="goals-count" class="text-2xl font-bold font-teko text-yellow-400 w-6 text-center">0</span>
+            <button onclick="adjustCounter('goals', 1)" class="w-8 h-8 rounded-full barca-red hover:bg-red-700 text-white font-bold text-lg flex items-center justify-center">+</button>
+          </div>
+        </div>
+
+        <!-- Breakdown counters/checkboxes -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+
+          <!-- Raphinha Goals -->
+          <div class="flex items-center justify-between bg-slate-900/60 p-2.5 rounded-lg border border-slate-700/50">
+            <div>
+              <span class="font-medium text-amber-300">ハフィーニャのゴール</span>
+              <span class="block text-[10px] text-slate-400">+500円 / ゴール</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <button onclick="adjustCounter('raphinha', -1)" class="w-7 h-7 rounded bg-slate-800 text-slate-300 border border-slate-600 flex items-center justify-center">-</button>
+              <span id="raphinha-count" class="text-lg font-bold font-teko text-white w-4 text-center">0</span>
+              <button onclick="adjustCounter('raphinha', 1)" class="w-7 h-7 rounded bg-slate-700 text-white flex items-center justify-center">+</button>
+            </div>
+          </div>
+
+          <!-- Yamal Assists -->
+          <div class="flex items-center justify-between bg-slate-900/60 p-2.5 rounded-lg border border-slate-700/50">
+            <div>
+              <span class="font-medium text-blue-300">ヤマルのアシスト</span>
+              <span class="block text-[10px] text-slate-400">+500円 / アシスト</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <button onclick="adjustCounter('yamal', -1)" class="w-7 h-7 rounded bg-slate-800 text-slate-300 border border-slate-600 flex items-center justify-center">-</button>
+              <span id="yamal-count" class="text-lg font-bold font-teko text-white w-4 text-center">0</span>
+              <button onclick="adjustCounter('yamal', 1)" class="w-7 h-7 rounded bg-slate-700 text-white flex items-center justify-center">+</button>
+            </div>
+          </div>
+
+          <!-- AT Dramatic Goal -->
+          <div class="flex items-center justify-between bg-slate-900/60 p-2.5 rounded-lg border border-slate-700/50 md:col-span-2">
+            <div>
+              <span class="font-medium text-purple-300">アディショナルタイムの劇的ゴール</span>
+              <span class="block text-[10px] text-slate-400">+1,000円 / 本</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <button onclick="adjustCounter('atGoal', -1)" class="w-7 h-7 rounded bg-slate-800 text-slate-300 border border-slate-600 flex items-center justify-center">-</button>
+              <span id="atGoal-count" class="text-lg font-bold font-teko text-white w-4 text-center">0</span>
+              <button onclick="adjustCounter('atGoal', 1)" class="w-7 h-7 rounded bg-slate-700 text-white flex items-center justify-center">+</button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Hat-trick Toggle -->
+        <label class="flex items-center space-x-2 bg-slate-900/60 p-2.5 rounded-lg border border-slate-700/50 cursor-pointer hover:bg-slate-900">
+          <input type="checkbox" id="hat-trick" class="w-4 h-4 text-red-600 rounded bg-slate-800 border-slate-600 focus:ring-0" onchange="calculateSavings()">
+          <span class="font-bold text-yellow-400">ハットトリック達成</span>
+          <span class="ml-auto text-xs font-semibold text-emerald-400">+¥3,000</span>
+        </label>
+      </div>
+
+      <!-- Live Total Floating / Summary Panel -->
+      <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-xl p-5 border-2 border-blue-600/80 shadow-xl space-y-3">
+        <div class="flex justify-between items-end border-b border-slate-700/60 pb-3">
+          <div>
+            <span class="text-xs text-slate-400 uppercase font-bold tracking-wider">今回の試合の貯金額</span>
+            <div id="calculated-match-savings" class="text-4xl font-extrabold font-teko text-yellow-400 leading-none mt-1">¥0</div>
+          </div>
+          <button onclick="saveMatchLog()" class="barca-red hover:bg-red-700 text-white px-5 py-2.5 rounded-lg font-bold text-sm flex items-center space-x-2 shadow-lg transition-transform active:scale-95">
+            <i class="fa-solid fa-piggy-bank text-lg"></i>
+            <span>この内容で貯金する</span>
+          </button>
+        </div>
+
+        <!-- Breakdown Details -->
+        <div id="breakdown-list" class="text-xs text-slate-400 space-y-1 pt-1 max-h-36 overflow-y-auto">
+          <span class="italic text-slate-500">条件を選択すると内訳が表示されます...</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- TROPHY / TITLE BANNER SECTION -->
+    <div id="section-trophy" class="hidden space-y-4">
+      <div class="bg-slate-800/80 rounded-xl p-4 border border-slate-700">
+        <h2 class="text-sm font-bold text-yellow-400 uppercase tracking-wider flex items-center mb-3">
+          <i class="fa-solid fa-trophy mr-2"></i> タイトル達成 一括貯金
+        </h2>
+        <p class="text-xs text-slate-400 mb-4">シーズン優勝時にここで一括追加できます！</p>
+
+        <div class="space-y-3">
+          <div class="flex items-center justify-between bg-slate-900 p-3 rounded-lg border border-slate-700">
+            <div>
+              <div class="font-bold text-sm text-white">ラリーガ優勝</div>
+              <div class="text-xs text-yellow-400">¥30,000</div>
+            </div>
+            <button onclick="addTrophySavings('ラリーガ優勝', 30000)" class="bg-amber-600 hover:bg-amber-500 text-white text-xs px-3 py-1.5 rounded font-bold">貯金追加</button>
+          </div>
+
+          <div class="flex items-center justify-between bg-slate-900 p-3 rounded-lg border border-slate-700">
+            <div>
+              <div class="font-bold text-sm text-white">チャンピオンズリーグ優勝</div>
+              <div class="text-xs text-yellow-400">¥50,000</div>
+            </div>
+            <button onclick="addTrophySavings('チャンピオンズリーグ優勝', 50000)" class="bg-amber-600 hover:bg-amber-500 text-white text-xs px-3 py-1.5 rounded font-bold">貯金追加</button>
+          </div>
+
+          <div class="flex items-center justify-between bg-slate-900 p-3 rounded-lg border border-slate-700">
+            <div>
+              <div class="font-bold text-sm text-white">カップ戦優勝</div>
+              <div class="text-xs text-yellow-400">¥5,000</div>
+            </div>
+            <button onclick="addTrophySavings('カップ戦優勝', 5000)" class="bg-amber-600 hover:bg-amber-500 text-white text-xs px-3 py-1.5 rounded font-bold">貯金追加</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORY LOG SECTION -->
+    <div id="section-history" class="hidden space-y-4">
+      <div class="flex justify-between items-center">
+        <h2 class="text-sm font-bold text-slate-300 uppercase tracking-wider">これまでの貯金履歴</h2>
+        <button onclick="clearAllHistory()" class="text-xs text-rose-400 hover:text-rose-300 flex items-center space-x-1">
+          <i class="fa-solid fa-trash"></i> <span>全履歴をリセット</span>
+        </button>
+      </div>
+
+      <div id="history-container" class="space-y-3">
+        <!-- Dynamic History Cards will go here -->
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // State management
+    const state = {
+      goals: 0,
+      raphinha: 0,
+      yamal: 0,
+      atGoal: 0,
+      history: []
+    };
+
+    // Load history on load
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedHistory = localStorage.getItem('barca_custom_savings_history');
+      if (savedHistory) {
+        state.history = JSON.parse(savedHistory);
+      }
+      updateHistoryUI();
+      calculateSavings();
+    });
+
+    // Tab Switcher
+    function switchTab(tab) {
+      document.getElementById('section-calculator').classList.add('hidden');
+      document.getElementById('section-trophy').classList.add('hidden');
+      document.getElementById('section-history').classList.add('hidden');
+
+      document.getElementById('tab-calculator').className = "flex-1 py-2 text-center font-bold text-sm rounded-md text-slate-400 hover:text-white transition-all";
+      document.getElementById('tab-trophy').className = "flex-1 py-2 text-center font-bold text-sm rounded-md text-slate-400 hover:text-white transition-all";
+      document.getElementById('tab-history').className = "flex-1 py-2 text-center font-bold text-sm rounded-md text-slate-400 hover:text-white transition-all";
+
+      if (tab === 'calc') {
+        document.getElementById('section-calculator').classList.remove('hidden');
+        document.getElementById('tab-calculator').className = "flex-1 py-2 text-center font-bold text-sm rounded-md barca-red text-white transition-all shadow";
+      } else if (tab === 'trophy') {
+        document.getElementById('section-trophy').classList.remove('hidden');
+        document.getElementById('tab-trophy').className = "flex-1 py-2 text-center font-bold text-sm rounded-md barca-red text-white transition-all shadow";
+      } else if (tab === 'history') {
+        document.getElementById('section-history').classList.remove('hidden');
+        document.getElementById('tab-history').className = "flex-1 py-2 text-center font-bold text-sm rounded-md barca-red text-white transition-all shadow";
+      }
+    }
+
+    // Counter Adjuster
+    function adjustCounter(type, delta) {
+      if (state[type] + delta >= 0) {
+        state[type] += delta;
+        document.getElementById(`${type}-count`).innerText = state[type];
+        calculateSavings();
+      }
+    }
+
+    // Main Calculation Logic
+    function calculateSavings() {
+      let total = 0;
+      const breakdown = [];
+
+      // 1. Match Result
+      const matchResult = document.querySelector('input[name="match-result"]:checked').value;
+      const streak = parseInt(document.getElementById('win-streak').value) || 0;
+
+      if (matchResult === 'win') {
+        total += 1000;
+        breakdown.push({ label: '勝利', amount: 1000 });
+
+        if (streak > 0) {
+          const streakBonus = streak * 100;
+          total += streakBonus;
+          breakdown.push({ label: `連勝数 (${streak}連勝)`, amount: streakBonus });
+        }
+      }
+
+      // 2. Clean Sheet
+      if (document.getElementById('clean-sheet').checked) {
+        total += 500;
+        breakdown.push({ label: 'クリーンシート（無失点）', amount: 500 });
+      }
+
+      // 3. Comeback Win
+      if (document.getElementById('comeback-win').checked) {
+        total += 1000;
+        breakdown.push({ label: '逆転勝利', amount: 1000 });
+      }
+
+      // 4. Margin Win (3+ goals)
+      if (document.getElementById('margin-win').checked) {
+        total += 1000;
+        breakdown.push({ label: '3点差以上の勝利', amount: 1000 });
+      }
+
+      // 5. AT Dramatic Win / Draw
+      if (document.getElementById('at-dramatic-win-draw').checked) {
+        total += 1000;
+        breakdown.push({ label: 'ATの劇的勝利 or 引き分け', amount: 1000 });
+      }
+
+      // 6. El Clasico
+      if (document.getElementById('is-el-clasico').checked) {
+        total += 3000;
+        breakdown.push({ label: 'クラシコ（レアル・マドリード戦）勝利', amount: 3000 });
+      }
+
+      // 7. Goals
+      if (state.goals > 0) {
+        const goalAmount = state.goals * 500;
+        total += goalAmount;
+        breakdown.push({ label: `チーム総得点 (${state.goals}ゴール)`, amount: goalAmount });
+      }
+
+      // 8. Raphinha Goals
+      if (state.raphinha > 0) {
+        const raphAmount = state.raphinha * 500;
+        total += raphAmount;
+        breakdown.push({ label: `ハフィーニャのゴール (${state.raphinha}点)`, amount: raphAmount });
+      }
+
+      // 9. Yamal Assists
+      if (state.yamal > 0) {
+        const yamalAmount = state.yamal * 500;
+        total += yamalAmount;
+        breakdown.push({ label: `ヤマルのアシスト (${state.yamal}回)`, amount: yamalAmount });
+      }
+
+      // 10. AT Dramatic Goal
+      if (state.atGoal > 0) {
+        const atAmount = state.atGoal * 1000;
+        total += atAmount;
+        breakdown.push({ label: `ATの劇的ゴール (${state.atGoal}本)`, amount: atAmount });
+      }
+
+      // 11. Hat-trick
+      if (document.getElementById('hat-trick').checked) {
+        total += 3000;
+        breakdown.push({ label: 'ハットトリック達成', amount: 3000 });
+      }
+
+      // Render Breakdown
+      const breakdownEl = document.getElementById('breakdown-list');
+      if (breakdown.length === 0) {
+        breakdownEl.innerHTML = '<span class="italic text-slate-500">条件を選択すると内訳が表示されます...</span>';
+      } else {
+        breakdownEl.innerHTML = breakdown.map(item => `
+          <div class="flex justify-between items-center">
+            <span>• ${item.label}</span>
+            <span class="font-mono text-slate-300">+¥${item.amount.toLocaleString()}</span>
+          </div>
+        `).join('');
+      }
+
+      document.getElementById('calculated-match-savings').innerText = `¥${total.toLocaleString()}`;
+      return { total, breakdown };
+    }
+
+    // Save current calculated match to history
+    function saveMatchLog() {
+      const { total, breakdown } = calculateSavings();
+      if (total === 0) {
+        alert('貯金額が0円です。試合結果やゴール条件を選択してください。');
+        return;
+      }
+
+      const opponent = document.getElementById('opponent').value.trim() || '試合';
+      const dateStr = new Date().toLocaleDateString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+      const entry = {
+        id: Date.now(),
+        title: `${opponent} 戦`,
+        date: dateStr,
+        amount: total,
+        breakdown: breakdown
+      };
+
+      state.history.unshift(entry);
+      saveAndSyncHistory();
+      
+      document.getElementById('opponent').value = '';
+      alert(`${opponent} 戦の貯金額 (¥${total.toLocaleString()}) を記録しました！`);
+    }
+
+    // Add Trophy/Title Savings directly
+    function addTrophySavings(titleName, amount) {
+      const dateStr = new Date().toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' });
+      const entry = {
+        id: Date.now(),
+        title: `🏆 ${titleName}`,
+        date: dateStr,
+        amount: amount,
+        breakdown: [{ label: titleName, amount: amount }]
+      };
+
+      state.history.unshift(entry);
+      saveAndSyncHistory();
+      alert(`🏆 ${titleName} (¥${amount.toLocaleString()}) の貯金を追加しました！`);
+    }
+
+    // Remove single log
+    function deleteHistoryItem(id) {
+      state.history = state.history.filter(item => item.id !== id);
+      saveAndSyncHistory();
+    }
+
+    // Clear all history
+    function clearAllHistory() {
+      if (confirm('本当にすべての貯金履歴を削除しますか？')) {
+        state.history = [];
+        saveAndSyncHistory();
+      }
+    }
+
+    // Sync state with LocalStorage and UI
+    function saveAndSyncHistory() {
+      localStorage.setItem('barca_custom_savings_history', JSON.stringify(state.history));
+      updateHistoryUI();
+    }
+
+    function updateHistoryUI() {
+      const container = document.getElementById('history-container');
+      const countEl = document.getElementById('history-count');
+      const totalAccumulatedEl = document.getElementById('total-accumulated-savings');
+
+      countEl.innerText = state.history.length;
+
+      const grandTotal = state.history.reduce((sum, item) => sum + item.amount, 0);
+      totalAccumulatedEl.innerText = `¥${grandTotal.toLocaleString()}`;
+
+      if (state.history.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-10 text-slate-500 bg-slate-800/40 rounded-xl border border-slate-700/50">
+            <i class="fa-solid fa-piggy-bank text-3xl mb-2 text-slate-600"></i>
+            <p class="text-sm">まだ貯金記録がありません。</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = state.history.map(item => `
+        <div class="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow space-y-2">
+          <div class="flex justify-between items-start">
+            <div>
+              <span class="text-xs text-slate-400 font-mono">${item.date}</span>
+              <h3 class="font-bold text-white text-base">${item.title}</h3>
+            </div>
+            <div class="text-right flex items-center space-x-3">
+              <span class="text-2xl font-bold font-teko text-yellow-400">¥${item.amount.toLocaleString()}</span>
+              <button onclick="deleteHistoryItem(${item.id})" class="text-slate-500 hover:text-rose-400 text-xs">
+                <i class="fa-solid fa-xmark text-base"></i>
+              </button>
+            </div>
+          </div>
+          <div class="text-xs text-slate-400 border-t border-slate-700/60 pt-2 space-y-0.5">
+            ${item.breakdown.map(b => `<div class="flex justify-between"><span>• ${b.label}</span><span class="text-slate-300">¥${b.amount.toLocaleString()}</span></div>`).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+  </script>
+</body>
+</html>
